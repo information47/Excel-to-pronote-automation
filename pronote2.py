@@ -135,30 +135,44 @@ def getInputColumnIndex(examName):
         By.XPATH,
         "//div[contains(@title, 'CECI est un ESSAI') and contains(@class, 'Titre') and contains(@class, 'liste_gridTitre_cel') and contains(@class, 'b-right')]"
     ))
-)
-    input("get aria-colindex")
-    print(f"exam_div.get_attribute: {exam_div.get_attribute("aria-colindex")}")
-    print(f"Exam div: {exam_div.text}")
-    return int(1) + 1
+    )
+    column = driver.execute_script(
+        "return window.getComputedStyle(arguments[0]).getPropertyValue('grid-column');",
+        exam_div
+    )
+    return int(column) + 4
 
 # get the location to fill the note and fill it
 def fillNote(studentName, columnIndex, note):
     student_cell = driver.find_element(By.XPATH, f"//div[contains(@class, 'liste_contenu_ligne') and contains(text(), '{studentName}')]")
+    time.sleep(1)
+
     inputRow = int(student_cell.find_element(By.XPATH, "../../..").get_attribute("aria-rowindex")) -2
+    time.sleep(3)
 
     input_id = f"GInterface.Instances[2].Instances[1]_{columnIndex}_{inputRow}_div"
-    
-    note_cell = driver.find_element(By.ID, input_id)
+    print(f"fill note for {studentName} at column: {columnIndex} | row: {inputRow} | id: {input_id}")
+
+    #note_cell = driver.find_element(By.ID, input_id)
+
+    note_cell = WebDriverWait(driver, 10).until(
+    EC.element_to_be_clickable((
+        By.ID, input_id
+    ))
+    )
+    time.sleep(1)
+
     note_cell.click()
-    
+    time.sleep(1)
+
     actions = ActionChains(driver)
     actions.send_keys(str(note)).send_keys(Keys.ENTER).perform()
+    time.sleep(1)
+
 
 def fillNotesForAllStudents(examName, notes):
     columnIndex = getInputColumnIndex(examName)
     print(f"Index de la colonne apres : {columnIndex}")
-    input("Press Enter to continue...")
-
     
     for student, note in notes.items():
         input(f"Press Enter to fill the note for {student} in column {columnIndex} with note {note}...")
@@ -171,10 +185,6 @@ def fillNotesForAllStudents(examName, notes):
             fillNote(student, columnIndex, note)
 
 fillNotesForAllStudents("CECI est un ESSAI", notes)
-
-
-
-
 
 
 #================= GET THE INPUT FOR A STUDENT ==================
